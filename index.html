@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guarda Civil Municipal • Plataforma Tática de Preparação</title>
+
+    <!-- Configurações PWA e Metatags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a192f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GCM Preparatório">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/9431/9431186.png">
+
+    <!-- Script de Registro do Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(() => console.log('PWA GCM Tático registrado com sucesso!'))
+            .catch((err) => console.log('Erro ao registrar Service Worker:', err));
+        });
+      }
+    </script>
+
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --gcm-navy-dark: #071326;
+            --gcm-navy: #0f2744;
+            --gcm-navy-light: #1b3d68;
+            --gcm-gold: #f59e0b;
+            --gcm-gold-dark: #d97706;
+            --gcm-blue: #0284c7;
+            --gcm-blue-dark: #0369a1;
+            --gcm-green: #10b981;
+            --gcm-green-dark: #059669;
+            --gcm-red: #ef4444;
+            --gcm-red-dark: #dc2626;
+            --gcm-purple: #8b5cf6;
+            --gcm-purple-dark: #7c3aed;
+            --gcm-card-bg: #ffffff;
+            --gcm-bg: #f8fafc;
+            --gcm-text: #0f172a;
+            --gcm-text-muted: #64748b;
+            --gcm-border: #e2e8f0;
+        }
+
+        body.dark-mode {
+            --gcm-card-bg: #112240;
+            --gcm-bg: #0a192f;
+            --gcm-text: #f1f5f9;
+            --gcm-text-muted: #94a3b8;
+            --gcm-border: #233554;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--gcm-navy-dark);
+            background-image: radial-gradient(rgba(2, 132, 199, 0.15) 1px, transparent 1px);
+            background-size: 24px 24px;
+            color: var(--gcm-text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+            transition: background-color 0.3s ease;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 980px;
+            background-color: var(--gcm-card-bg);
+            border-radius: 28px;
+            border: 4px solid var(--gcm-border);
+            box-shadow: 0 16px 0 #030b17, 0 25px 40px rgba(0,0,0,0.6);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* BARRA SUPERIOR */
+        .top-navbar {
+            background-color: var(--gcm-card-bg);
+            border-bottom: 3px solid var(--gcm-border);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 60;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .app-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-pill-btn {
+            background: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            border-radius: 14px;
+            padding: 6px 12px;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 3px 0 #cbd5e1;
+            transition: all 0.15s ease;
+        }
+
+        .control-pill-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #cbd5e1;
+        }
+
+        .control-pill-btn.active {
+            background: #e0f2fe;
+            border-color: var(--gcm-blue);
+            color: var(--gcm-blue-dark);
+            box-shadow: 0 3px 0 var(--gcm-blue);
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 900;
+            font-size: 13.5px;
+        }
+
+        .stat-rank { color: var(--gcm-gold-dark); }
+        .stat-streak { color: #f97316; }
+        .stat-gems { color: var(--gcm-blue); }
+        .stat-xp { color: var(--gcm-green-dark); }
+
+        /* CONTEÚDO PRINCIPAL */
+        .main-content {
+            padding: 22px;
+            background-color: var(--gcm-bg);
+            min-height: 580px;
+            max-height: 78vh;
+            overflow-y: auto;
+        }
+
+        /* 5 BOTÕES HORIZONTAIS */
+        .horizontal-nav-bar {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            scrollbar-width: thin;
+        }
+
+        .h-nav-btn {
+            flex: 0 0 auto;
+            background: var(--gcm-card-bg);
+            border: 3px solid var(--gcm-border);
+            border-radius: 16px;
+            padding: 10px 16px;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--gcm-text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 0 var(--gcm-border);
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .h-nav-btn:hover {
+            transform: translateY(-2px);
+            background: #f1f5f9;
+        }
+
+        /* CAIXA DE AUTENTICAÇÃO POR CPF */
+        .cpf-box {
+            background: var(--gcm-card-bg);
+            border: 3px solid var(--gcm-border);
+            border-radius: 22px;
+            padding: 16px 20px;
+            margin-bottom: 22px;
+            box-shadow: 0 4px 0 var(--gcm-border);
+            text-align: left;
+        }
+
+        .cpf-box label {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 14px;
+            color: var(--gcm-text);
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .cpf-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gcm-border);
+            border-radius: 14px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 16px;
+            font-weight: 800;
+            color: #0f172a;
+            background: #fff;
+            outline: none;
+            user-select: text;
+        }
+
+        /* 4 BLOCOS QUADRADOS */
+        .blocks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .square-block-card {
+            background: var(--gcm-card-bg);
+            border: 3px solid var(--gcm-border);
+            border-radius: 24px;
+            padding: 20px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 0 var(--gcm-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 200px;
+        }
+
+        .square-block-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 0 var(--gcm-border);
+        }
+
+        .block-icon-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        }
+
+        .block-title {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--gcm-text);
+            margin-bottom: 4px;
+            line-height: 1.25;
+        }
+
+        .block-subtitle {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--gcm-text-muted);
+        }
+
+        .block-badge {
+            margin-top: 10px;
+            font-size: 11px;
+            font-weight: 900;
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+
+        /* BOTÕES DUOLINGO ESTILIZADOS */
+        .btn-duo {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 13px 20px;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            width: 100%;
+        }
+
+        .btn-duo:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: none !important;
+        }
+
+        .btn-blue { background-color: var(--gcm-blue); color: white; box-shadow: 0 5px 0 var(--gcm-blue-dark); }
+        .btn-green { background-color: var(--gcm-green); color: white; box-shadow: 0 5px 0 var(--gcm-green-dark); }
+        .btn-gold { background-color: var(--gcm-gold); color: #451a03; box-shadow: 0 5px 0 var(--gcm-gold-dark); }
+        .btn-purple { background-color: var(--gcm-purple); color: white; box-shadow: 0 5px 0 var(--gcm-purple-dark); }
+        .btn-gray { background-color: #e2e8f0; color: #475569; box-shadow: 0 5px 0 #cbd5e1; }
+        .btn-disabled { background-color: #cbd5e1 !important; color: #64748b !important; box-shadow: 0 4px 0 #94a3b8 !important; cursor: not-allowed; }
+
+        /* QUIZ & CARDS */
+        .question-card {
+            background: var(--gcm-card-bg);
+            border: 3px solid var(--gcm-border);
+            border-radius: 22px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 0 var(--gcm-border);
+        }
+
+        .question-tag {
+            display: inline-block;
+            background: #e0f2fe;
+            color: #0369a1;
+            font-size: 11.5px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--gcm-text);
+            line-height: 1.55;
+        }
+
+        /* CAIXA DE TEXTO DE APOIO / LEITURA */
+        .reading-box {
+            background: #f8fafc;
+            border: 2px solid #cbd5e1;
+            border-left: 5px solid var(--gcm-blue);
+            border-radius: 16px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            line-height: 1.65;
+            color: #334155;
+            max-height: 250px;
+            overflow-y: auto;
+            user-select: text;
+        }
+
+        body.dark-mode .reading-box {
+            background: #0f172a;
+            border-color: #334155;
+            border-left-color: var(--gcm-blue);
+            color: #cbd5e1;
+        }
+
+        .reading-box-header {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--gcm-blue);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .option-item {
+            background: var(--gcm-card-bg);
+            border: 3px solid var(--gcm-border);
+            border-radius: 16px;
+            padding: 13px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--gcm-text);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 3px 0 var(--gcm-border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .option-item:hover {
+            background: #f1f5f9;
+        }
+
+        .option-item.selected {
+            border-color: var(--gcm-blue);
+            background: #f0f9ff;
+            color: var(--gcm-blue-dark);
+            box-shadow: 0 3px 0 var(--gcm-blue-dark);
+        }
+
+        .option-item.correct {
+            border-color: var(--gcm-green) !important;
+            background: #f0fdf4 !important;
+            color: #15803d !important;
+            box-shadow: 0 3px 0 var(--gcm-green-dark) !important;
+        }
+
+        .option-item.wrong {
+            border-color: var(--gcm-red) !important;
+            background: #fef2f2 !important;
+            color: #b91c1c !important;
+            box-shadow: 0 3px 0 var(--gcm-red-dark) !important;
+        }
+
+        /* FLASHCARD 3D */
+        .flashcard-container {
+            perspective: 1000px;
+            width: 100%;
+            min-height: 240px;
+            margin: 16px 0;
+            cursor: pointer;
+        }
+
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            min-height: 240px;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .flashcard-container.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 24px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid var(--gcm-border);
+            box-shadow: 0 6px 0 var(--gcm-border);
+            background-color: var(--gcm-card-bg);
+            text-align: center;
+        }
+
+        .flashcard-back {
+            background-color: #f0fdf4;
+            border-color: var(--gcm-green);
+            color: #14532d;
+            transform: rotateY(180deg);
+            box-shadow: 0 6px 0 var(--gcm-green-dark);
+        }
+
+        /* CARTA INSPIRADORA */
+        .inspiration-box {
+            background: #fffbeb;
+            border: 3px solid #fde68a;
+            border-radius: 26px;
+            padding: 26px;
+            box-shadow: 0 6px 0 #f59e0b;
+            line-height: 1.8;
+            color: #78350f;
+            text-align: left;
+        }
+
+        .inspiration-box h3 {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 24px;
+            color: #92400e;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .quote-tactical {
+            background: #ffffff;
+            border-left: 6px solid #d97706;
+            padding: 14px 18px;
+            border-radius: 12px;
+            font-weight: 800;
+            color: #92400e;
+            margin: 16px 0;
+            box-shadow: 0 3px 0 #fde68a;
+        }
+
+        /* SIMULADOR TÁTICO / CRIATIVIDADE (BOTÃO 04) */
+        .tactical-mission-card {
+            background: linear-gradient(135deg, #0f2744, #071326);
+            border: 3px solid var(--gcm-gold);
+            border-radius: 24px;
+            padding: 22px;
+            color: white;
+            box-shadow: 0 8px 0 #d97706;
+            margin-bottom: 16px;
+        }
+
+        .tactical-timer-bar {
+            width: 100%;
+            height: 10px;
+            background: #1e293b;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+
+        .tactical-timer-fill {
+            height: 100%;
+            background: var(--gcm-gold);
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        .bottom-nav {
+            padding: 14px 20px;
+            background: var(--gcm-card-bg);
+            border-top: 3px solid var(--gcm-border);
+            display: flex;
+            gap: 10px;
+        }
+
+        .hidden { display: none !important; }
+
+        #confetti-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 120;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- TOPO DE NAVEGAÇÃO -->
+    <div class="top-navbar">
+        <div class="app-controls">
+            <button id="btn-toggle-sound" class="control-pill-btn active" onclick="toggleSound()">
+                <i class="fa-solid fa-volume-high" id="sound-icon"></i>
+                <span id="sound-text">Som: ON</span>
+            </button>
+            <button id="btn-toggle-theme" class="control-pill-btn" onclick="toggleTheme()">
+                <i class="fa-solid fa-moon"></i>
+                <span>Tema</span>
+            </button>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item stat-rank" id="user-rank"><i class="fa-solid fa-shield-halved"></i> <span>Guarda Municipal</span></div>
+            <div class="stat-item stat-streak"><i class="fa-solid fa-fire"></i> <span id="user-streak">1</span> d</div>
+            <div class="stat-item stat-gems"><i class="fa-solid fa-gem"></i> <span id="user-gems">150</span></div>
+            <div class="stat-item stat-xp"><i class="fa-solid fa-bolt"></i> <span id="user-xp">0 XP</span></div>
+        </div>
+    </div>
+
+    <!-- ÁREA DE CONTEÚDO DINÂMICO -->
+    <div class="main-content" id="main-content">
+
+        <!-- 5 BOTÕES HORIZONTAIS -->
+        <div class="horizontal-nav-bar">
+            <button class="h-nav-btn" onclick="startOfficialTest()">
+                <i class="fa-solid fa-award" style="color:var(--gcm-gold);"></i> 01. Prova Oficial Avança SP
+            </button>
+            <button class="h-nav-btn" onclick="openFlashcardsSection()">
+                <i class="fa-solid fa-layer-group" style="color:var(--gcm-purple);"></i> 02. Flashcards Táticos
+            </button>
+            <button class="h-nav-btn" onclick="openMindMapsSection()">
+                <i class="fa-solid fa-diagram-project" style="color:var(--gcm-blue);"></i> 03. Mapas Mentais
+            </button>
+            <button class="h-nav-btn" onclick="openTacticalSimulator()">
+                <i class="fa-solid fa-crosshairs" style="color:var(--gcm-red);"></i> 04. Missão Decisão Rápida
+            </button>
+            <button class="h-nav-btn" onclick="openInspirationLetter()">
+                <i class="fa-solid fa-scroll" style="color:var(--gcm-gold-dark);"></i> 05. Carta Inspiradora
+            </button>
+        </div>
+
+        <!-- TELA HOME: MENU PRINCIPAL E OS 4 BLOCOS QUADRADOS -->
+        <div id="screen-home">
+            <div style="text-align:center; margin-bottom:18px;">
+                <h2 style="font-family:'Fredoka'; font-size:26px; color:var(--gcm-text);">Guarda Civil Municipal • Treinamento</h2>
+                <p style="font-size:14px; font-weight:700; color:var(--gcm-text-muted);">Autenticação Individual e Módulos Táticos:</p>
+            </div>
+
+            <!-- CAIXA DE AUTENTICAÇÃO DO CANDIDATO POR CPF -->
+            <div class="cpf-box" id="cpf-container">
+                <label for="input-cpf"><i class="fa-solid fa-address-card"></i> Digite seu CPF para autenticar o dispositivo e liberar os simulados:</label>
+                <input type="text" id="input-cpf" class="cpf-input" placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)">
+                <span id="cpf-status" style="font-size:12px; font-weight:700; color:var(--gcm-text-muted); margin-top:6px; display:block;">Insira os 11 dígitos para autenticar o acesso individual.</span>
+            </div>
+
+            <!-- OS 4 BLOCOS QUADRADOS DE DISCIPLINAS -->
+            <div class="blocks-grid">
+                <!-- Bloco 01: Português -->
+                <div class="square-block-card" onclick="startQuizSubject('portugues')" style="border-color:#38bdf8;">
+                    <div class="block-icon-circle" style="background:#e0f2fe; color:#0284c7;">
+                        <i class="fa-solid fa-book-bookmark"></i>
+                    </div>
+                    <div class="block-title">01. Português</div>
+                    <div class="block-subtitle">Crase, Sintaxe, Pontuação & Concordância</div>
+                    <span class="block-badge" style="background:#e0f2fe; color:#0369a1;">10 Questões Auditadas</span>
+                </div>
+
+                <!-- Bloco 02: Matemática & RLM -->
+                <div class="square-block-card" onclick="startQuizSubject('matematica')" style="border-color:#fb923c;">
+                    <div class="block-icon-circle" style="background:#ffedd5; color:#ea580c;">
+                        <i class="fa-solid fa-calculator"></i>
+                    </div>
+                    <div class="block-title">02. Matemática & RLM</div>
+                    <div class="block-subtitle">MMC, Proporções, Porcentagem & Lógica</div>
+                    <span class="block-badge" style="background:#ffedd5; color:#c2410c;">10 Questões Auditadas</span>
+                </div>
+
+                <!-- Bloco 03: Informática -->
+                <div class="square-block-card" onclick="startQuizSubject('informatica')" style="border-color:#a855f7;">
+                    <div class="block-icon-circle" style="background:#f3e8ff; color:#7e22ce;">
+                        <i class="fa-solid fa-laptop-code"></i>
+                    </div>
+                    <div class="block-title">03. Informática</div>
+                    <div class="block-subtitle">Windows, Word, Excel, PowerPoint & Web</div>
+                    <span class="block-badge" style="background:#f3e8ff; color:#6b21a8;">10 Questões Auditadas</span>
+                </div>
+
+                <!-- Bloco 04: Conhecimentos Específicos -->
+                <div class="square-block-card" onclick="startQuizSubject('especificos')" style="border-color:#10b981;">
+                    <div class="block-icon-circle" style="background:#d1fae5; color:#059669;">
+                        <i class="fa-solid fa-scale-balanced"></i>
+                    </div>
+                    <div class="block-title">04. Específicos</div>
+                    <div class="block-subtitle">Dir. Penal, Const, Adm, CTB & Leis GCM</div>
+                    <span class="block-badge" style="background:#d1fae5; color:#047857;">25 Questões Auditadas</span>
+                </div>
+            </div>
+
+            <!-- CARTÃO DE RESUMO RÁPIDO DO CANDIDATO -->
+            <div class="question-card" style="background:linear-gradient(135deg, rgba(2,132,199,0.08), rgba(245,158,11,0.08)); border-color:var(--gcm-blue);">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <h4 style="font-family:'Fredoka'; font-size:17px; color:var(--gcm-text);"><i class="fa-solid fa-id-card-clip"></i> Ficha de Treinamento</h4>
+                        <p style="font-size:12.5px; font-weight:700; color:var(--gcm-text-muted);">Seu progresso e autenticação são salvos localmente.</p>
+                    </div>
+                    <button class="btn-duo btn-blue" style="width:auto; padding:8px 16px;" onclick="openTacticalSimulator()">
+                        <i class="fa-solid fa-play"></i> Desafio Rápido
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA DO QUIZ / SIMULADOS -->
+        <div id="screen-quiz" class="hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-weight:800; font-size:13px;">
+                <span id="quiz-counter" style="color:var(--gcm-gold-dark);">Questão 1 de 10</span>
+                <span id="quiz-module-title" style="color:var(--gcm-blue);">Disciplina</span>
+            </div>
+
+            <!-- ÁREA DO TEXTO DE APOIO (SE A QUESTÃO TIVER) -->
+            <div id="quiz-reading-box" class="reading-box hidden"></div>
+
+            <div class="question-card">
+                <span class="question-tag" id="quiz-topic">Assunto</span>
+                <div class="question-text" id="quiz-question-text">Carregando enunciado...</div>
+            </div>
+
+            <div class="options-list" id="quiz-options-container"></div>
+            <div id="quiz-feedback-box" class="hidden" style="margin-top:14px; padding:16px; border-radius:16px; font-size:13.5px; font-weight:700; line-height:1.55;"></div>
+        </div>
+
+        <!-- TELA FLASHCARDS 3D -->
+        <div id="screen-flashcards" class="hidden">
+            <div style="text-align:center; margin-bottom:14px;">
+                <h2 style="font-family:'Fredoka'; font-size:24px;">🎴 Flashcards de Memorização</h2>
+                <p style="font-size:13px; font-weight:700; color:var(--gcm-text-muted);">Toque no card para girar e testar sua retenção de conceitos-chave.</p>
+            </div>
+
+            <div class="flashcard-container" id="flashcard-box" onclick="flipFlashcard()">
+                <div class="flashcard-inner">
+                    <div class="flashcard-front">
+                        <span class="question-tag" id="fc-tag">Direito Penal • Art. 319</span>
+                        <h3 class="question-text" id="fc-front-text" style="font-size:18px;">Carregando pergunta...</h3>
+                        <p style="font-size: 12px; color: var(--gcm-text-muted); margin-top: 14px;">(Toque para revelar a resposta 🔄)</p>
+                    </div>
+                    <div class="flashcard-back">
+                        <span class="question-tag" style="background:#bbf7d0; color:#166534;">Resposta & Mnemônico</span>
+                        <p id="fc-back-text" style="font-size:15px; font-weight:800; line-height:1.5;">Carregando resposta...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn-duo btn-gray" onclick="prevFlashcard()">← Anterior</button>
+                <button class="btn-duo btn-purple" onclick="nextFlashcard()">Próximo Card →</button>
+            </div>
+        </div>
+
+        <!-- TELA MAPAS MENTAIS -->
+        <div id="screen-mindmaps" class="hidden">
+            <div style="text-align:center; margin-bottom:16px;">
+                <h2 style="font-family:'Fredoka'; font-size:24px;">🧠 Mapas Mentais & Esquemas Visuais</h2>
+                <p style="font-size:13px; font-weight:700; color:var(--gcm-text-muted);">Sínteses esquemáticas dos temas mais cobrados em concursos.</p>
+            </div>
+
+            <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom:16px;">
+                <button class="control-pill-btn active" onclick="renderMindMap('adm')">Atos & Poderes</button>
+                <button class="control-pill-btn" onclick="renderMindMap('penal')">Crimes Funcionais</button>
+                <button class="control-pill-btn" onclick="renderMindMap('crase')">Regras de Crase</button>
+                <button class="control-pill-btn" onclick="renderMindMap('windows')">Windows & Office</button>
+            </div>
+
+            <div class="question-card" id="mindmap-viewer"></div>
+        </div>
+
+        <!-- TELA CRIATIVIDADE: MISSÃO TÁTICA DECISÃO RÁPIDA (BOTÃO 04) -->
+        <div id="screen-tactical" class="hidden">
+            <div class="tactical-mission-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-family:'Fredoka'; font-size:18px; color:var(--gcm-gold);"><i class="fa-solid fa-bullhorn"></i> Ocorrência em Tempo Real</span>
+                    <span id="tactical-timer-count" style="font-weight:900; font-size:15px; color:#fde68a;">Tempo: 30s</span>
+                </div>
+                <div class="tactical-timer-bar">
+                    <div class="tactical-timer-fill" id="tactical-timer-fill"></div>
+                </div>
+                <h3 id="tactical-scenario-text" style="margin-top:10px; font-size:16px; font-weight:700; line-height:1.5;">
+                    Você depara com um indivíduo em fuga a pé, desarmado, após furtar uma loja. Segundo a Lei 13.060/2014, o uso de arma de fogo é:
+                </h3>
+            </div>
+
+            <div class="options-list" id="tactical-options-container"></div>
+            <div id="tactical-feedback-box" class="hidden" style="margin-top:14px; padding:16px; border-radius:16px; font-size:13.5px; font-weight:700;"></div>
+        </div>
+
+        <!-- TELA CARTA INSPIRADORA (BOTÃO 05) -->
+        <div id="screen-inspiration" class="hidden">
+            <div class="inspiration-box">
+                <h3>🛡️ A Nobre Vocação da Guarda Civil Municipal</h3>
+                <p>Vestir a farda azul-marinho da <strong>Guarda Civil Municipal</strong> vai muito além de buscar a estabilidade de um cargo público: é atender a um chamado profundo da alma, um pacto silencioso de amor e coragem com a sua própria gente.</p>
+                
+                <div class="quote-tactical">
+                    "É escolher ser o guardião da calçada por onde passam os trabalhadores, o protetor do sorriso das crianças nos portões das escolas e o olhar atento que devolve a paz quando a incerteza toma conta das ruas."
+                </div>
+
+                <p style="margin-top:10px;">Ninguém vê a batalha solitária travada noite adentro, quando o cansaço do dia pesa nos ombros e o sono sussurra para você desistir. É nesse silêncio que a sua vocação é forjada.</p>
+                <p style="margin-top:10px;">Hoje, a tecnologia se transformou na sua maior aliada nessa travessia: <strong>na tela deste aplicativo web</strong>, cada minuto livre vira solo fértil para o seu futuro. Através dos simulados dinâmicos e dos flashcards táticos na palma da mão, você transforma disciplina em aprovação.</p>
+                
+                <p style="text-align:center; font-family:'Fredoka'; font-size:19px; font-weight:700; color:#b45309; margin-top:16px;">
+                    Honre a sua jornada. A farda azul-marinho aguarda você! 🏆👮‍♂️
+                </p>
+            </div>
+        </div>
+
+        <!-- TELA RESULTADO -->
+        <div id="screen-result" class="hidden">
+            <div style="text-align:center; margin-bottom:16px;">
+                <h2 style="font-family:'Fredoka'; font-size:26px; color:var(--gcm-green);">Módulo Concluído! 🎖️</h2>
+                <p id="res-cpf-tag" style="font-size:13.5px; font-weight:800; color:var(--gcm-text-muted);"></p>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; margin:20px 0;">
+                <div class="question-card" style="text-align:center; padding:14px;">
+                    <div style="font-family:'Fredoka'; font-size:26px; color:var(--gcm-green);" id="res-correct">0</div>
+                    <div style="font-size:11px; font-weight:900; color:var(--gcm-text-muted);">ACERTOS</div>
+                </div>
+                <div class="question-card" style="text-align:center; padding:14px;">
+                    <div style="font-family:'Fredoka'; font-size:26px; color:var(--gcm-red);" id="res-wrong">0</div>
+                    <div style="font-size:11px; font-weight:900; color:var(--gcm-text-muted);">ERROS</div>
+                </div>
+                <div class="question-card" style="text-align:center; padding:14px;">
+                    <div style="font-family:'Fredoka'; font-size:26px; color:var(--gcm-blue);" id="res-accuracy">0%</div>
+                    <div style="font-size:11px; font-weight:900; color:var(--gcm-text-muted);">APROVEITAMENTO</div>
+                </div>
+                <div class="question-card" style="text-align:center; padding:14px;">
+                    <div style="font-family:'Fredoka'; font-size:26px; color:var(--gcm-gold-dark);" id="res-xp">+0</div>
+                    <div style="font-size:11px; font-weight:900; color:var(--gcm-text-muted);">XP TÁTICO</div>
+                </div>
+            </div>
+
+            <button class="btn-duo btn-green" onclick="showHomeScreen()">🔄 Retornar ao Menu Principal</button>
+        </div>
+
+    </div>
+
+    <!-- RODAPÉ DE NAVEGAÇÃO -->
+    <div class="bottom-nav">
+        <button class="btn-duo btn-gray" onclick="showHomeScreen()" style="width:auto; padding:12px 18px;">
+            <i class="fa-solid fa-house"></i> Início
+        </button>
+        <button class="btn-duo btn-gray btn-disabled hidden" id="btn-quiz-next" disabled onclick="handleQuizAction()">
+            Verificar Resposta
+        </button>
+    </div>
+</div>
+
+<script>
+    /* ESTADO GLOBAL DO APLICATIVO */
+    let userState = { xp: 0, streak: 1, gems: 150, rankLevel: 1 };
+    let soundEnabled = true;
+    let audioCtx = null;
+    let candidatoCPF = "";
+
+    /* MÁSCARA E VALIDAÇÃO OFICIAL DO CPF */
+    function mascaraCPF(input) {
+        let value = input.value.replace(/\D/g, "");
+        if (value.length > 11) value = value.slice(0, 11);
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d)/, "$1.$2");
+        value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        input.value = value;
+
+        const status = document.getElementById('cpf-status');
+        if (value.length === 14 && validarCPF(value)) {
+            candidatoCPF = value;
+            localStorage.setItem('gcm_cpf', value);
+            status.innerHTML = "✅ CPF Autenticado! Acesso liberado.";
+            status.style.color = "var(--gcm-green)";
+            playBeep('correct');
+        } else {
+            candidatoCPF = "";
+            status.innerHTML = "Insira os 11 dígitos para autenticar o acesso individual.";
+            status.style.color = "var(--gcm-text-muted)";
+        }
+    }
+
+    function validarCPF(cpf) {
+        cpf = cpf.replace(/[^\d]+/g, '');
+        if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+        let soma = 0, resto;
+        for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
+        resto = (soma * 10) % 11;
+        if (resto === 10 || resto === 11) resto = 0;
+        if (resto !== parseInt(cpf.substring(9, 10))) return false;
+        soma = 0;
+        for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
+        resto = (soma * 10) % 11;
+        if (resto === 10 || resto === 11) resto = 0;
+        return resto === parseInt(cpf.substring(10, 11));
+    }
+
+    function checkCPF() {
+        if (candidatoCPF && validarCPF(candidatoCPF)) return true;
+        alert("⚠️ Acesso Bloqueado: Por favor, digite seu CPF válido no topo da página inicial para autenticar seus simulados.");
+        showHomeScreen();
+        const input = document.getElementById('input-cpf');
+        if (input) input.focus();
+        return false;
+    }
+
+    /* TEXTO INTEGRAL DA BANCA AVANÇA SP PARA LEITURA E INTERPRETAÇÃO */
+    const textoOficialAmazonas = `
+        <strong>As amazonas guerreiras da lenda grega podem realmente ter existido</strong><br><br>
+        Uma das personagens mais famosas dos quadrinhos, compondo a trindade dos três personagens mais importantes da DC, a Mulher Maravilha foi baseada no mito das guerreiras gregas conhecidas como Amazonas. Porém, cada vez mais pesquisas vêm descobrindo evidências de que grupos de mulheres guerreiras na antiga Grécia estão mais próximas da realidade do que se acreditava.<br><br>
+        De acordo com as lendas, as Amazonas eram guerreiras ferozes que viviam em uma nação própria à parte do mundo conhecido. Antes da Mulher Maravilha, as histórias sobre essas mulheres guerreiras foram contadas e registradas pelo famoso poeta grego Homero, na sua A Ilíada.<br><br>
+        Nas histórias, Hércules teve que lutar contra essas guerreiras para obter o cinto mágico da rainha Amazona Hipólita em um dos seus 12 trabalhos. Já o famoso guerreiro Aquiles matou outra rainha, Pentesiléia, apenas para depois se apaixonar por ela quando retirou o capacete de seu rosto.<br><br>
+        Embora as histórias contidas no poema A Ilíada de Homero sejam alvos de debates sobre a sua existência real ou não, cada vez mais evidências vêm mostrando que mulheres guerreiras como as Amazonas podem realmente ter existido.<br><br>
+        Em 2019, arqueólogos descobriram um túmulo com os restos mortais de quatro guerreiras enterradas com um estoque de pontas de flechas, lanças e equipamentos de montaria na região dos estepes no oeste da Rússia. Recentemente, outra equipe encontrou túmulo na necrópole de Nakhchivan, no Azerbaijão, de aproximadamente 4 mil anos, contendo mulheres enterradas com armas como pontas de flecha, um punhal de bronze, maça e joias.<br><br>
+        <em>(Revista Superinteressante. Adaptado)</em>
+    `;
+
+    /* BANCO DE DADOS INTEGRADO DAS 4 DISCIPLINAS + PROVA OFICIAL */
+    const appDatabase = {
+        // BLOCO 01: PORTUGUÊS (10 QUESTÕES AUDITADAS)
+        portugues: [
+            {
+                topic: "Sentido Próprio e Figurado",
+                question: "Assinale a alternativa em que a palavra destacada está empregada em sentido figurado (conotativo).",
+                options: ["A pedra quebrou o vidro da viatura.", "Construíram um muro de pedra ao redor da delegacia.", "Aquele criminoso possui um coração de pedra.", "O guarda tropeçou em uma pedra durante a ronda.", "Compramos muita pedra para a obra do batalhão."],
+                answer: 2,
+                feedback: "Gabarito: C. 'Coração de pedra' é uma metáfora (sentido conotativo) para indicar insensibilidade."
+            },
+            {
+                topic: "Sinônimos e Antônimos",
+                question: "Assinale a alternativa que apresenta um sinônimo e um antônimo para a palavra 'efêmero', respectivamente.",
+                options: ["Passageiro e transitório.", "Duradouro e eterno.", "Permanente e provisório.", "Fugaz e permanente.", "Breve e rápido."],
+                answer: 3,
+                feedback: "Gabarito: D. 'Efêmero' significa de curta duração (sinônimo: fugaz; antônimo: permanente)."
+            },
+            {
+                topic: "Ortografia • Emprego dos Porquês",
+                question: "Complete: 'Não sabemos o ________ de tanta confusão no trânsito. ________ o motorista fugiu? Ele estava assustado ________?'.",
+                options: ["por que, Porquê, por quê.", "porquê, Por que, por quê.", "por quê, Por que, porquê.", "porquê, Por quê, por que.", "por que, Por que, por que."],
+                answer: 1,
+                feedback: "Gabarito: B. 1º 'o porquê' (substantivo); 2º 'Por que' (pergunta direta); 3º 'por quê' (fim de frase)."
+            },
+            {
+                topic: "Pontuação • Uso da Vírgula",
+                question: "Em qual das frases abaixo o emprego da vírgula está CORRETO?",
+                options: ["O prefeito municipal, assinou o novo decreto de segurança.", "Os guardas civis, prenderam o indivíduo em flagrante.", "Ontem à noite, a viatura realizou patrulhamento preventivo.", "A população reivindicou mais segurança, e iluminação pública.", "O comandante informou que, a escala será alterada."],
+                answer: 2,
+                feedback: "Gabarito: C. A vírgula isola corretamente o adjunto adverbial de tempo deslocado ('Ontem à noite')."
+            },
+            {
+                topic: "Classes de Palavras • Conjunção",
+                question: "Na frase 'Embora estivesse exausto após o plantão, o guarda atendeu a ocorrência', a conjunção expressa ideia de:",
+                options: ["Causa.", "Consequência.", "Condição.", "Adição.", "Concessão."],
+                answer: 4,
+                feedback: "Gabarito: E. 'Embora' é a principal conjunção subordinativa concessiva."
+            },
+            {
+                topic: "Concordância Verbal",
+                question: "Assinale a alternativa que apresenta ERRO de concordância verbal.",
+                options: ["Havia muitos curiosos no local do acidente.", "Fazem dois anos que o novo concurso foi homologado.", "Vende-se esta viatura antiga.", "Precisa-se de novos equipamentos para a corporação.", "Fui eu quem redigiu o Boletim de Ocorrência."],
+                answer: 1,
+                feedback: "Gabarito: B. O verbo 'fazer' indicando tempo decorrido é impessoal (O correto é: 'Faz dois anos')."
+            },
+            {
+                topic: "Concordância Nominal",
+                question: "Assinale a alternativa em que a concordância nominal está de acordo com a norma-padrão.",
+                options: ["As faturas e os relatórios seguem anexo.", "A porta da base estava meia aberta.", "É proibido a entrada de pessoas não autorizadas.", "As próprias vítimas reconheceram o suspeito.", "Segue incluso a documentação solicitada."],
+                answer: 3,
+                feedback: "Gabarito: D. 'Próprias' concorda em gênero e número com o substantivo 'vítimas'."
+            },
+            {
+                topic: "Regência Verbal",
+                question: "Considerando a regência do verbo 'assistir' no sentido de ver/presenciar, assinale a alternativa correta.",
+                options: ["Os moradores assistiram o roubo assustados.", "A guarnição assistiu no roubo passivamente.", "O comandante assistiu ao treinamento da tropa.", "Assistimos o filme sobre segurança pública.", "Lhe assistimos durante a formatura."],
+                answer: 2,
+                feedback: "Gabarito: C. 'Assistir' como presenciar exige preposição 'a' (assistiu AO treinamento)."
+            },
+            {
+                topic: "Crase",
+                question: "Assinale a alternativa em que o uso do acento grave (indicativo de crase) é OBRIGATÓRIO.",
+                options: ["O suspeito fugiu a pé após ser avistado.", "O candidato começou a chorar durante o teste físico.", "A viatura foi comprada a prazo pela prefeitura.", "Entreguei o relatório do turno a você.", "A equipe retornou à delegacia após a ronda."],
+                answer: 4,
+                feedback: "Gabarito: E. Retornar 'a' + 'a' delegacia = à delegacia."
+            },
+            {
+                topic: "Colocação Pronominal",
+                question: "Assinale a alternativa correta quanto à colocação pronominal, de acordo com a norma culta.",
+                options: ["Me disseram que o edital sairá amanhã.", "Não avisaram-me sobre a mudança de escala.", "Tudo se resolve com diálogo e paciência.", "Te entregarei os documentos no final do dia.", "Alguém chamou-o na portaria do prédio."],
+                answer: 2,
+                feedback: "Gabarito: C. O pronome indefinido 'Tudo' atrai a próclise obrigatória ('Tudo se resolve')."
+            }
+        ],
+
+        // BLOCO 02: MATEMÁTICA E RLM (10 QUESTÕES AUDITADAS)
+        matematica: [
+            {
+                topic: "MMC e MDC • Encontro",
+                question: "Duas viaturas partem juntas às 08h00min. A viatura A retorna a cada 40 min e a B a cada 60 min. A que horas se encontrarão novamente?",
+                options: ["09h20min", "09h40min", "10h00min", "10h30min", "11h00min"],
+                answer: 2,
+                feedback: "Gabarito: C. MMC(40, 60) = 120 min (2h). 08h00 + 2h = 10h00min."
+            },
+            {
+                topic: "Divisão Proporcional",
+                question: "Carlos (4 anos) e Daniel (5 anos) dividem R$ 3.600 proporcionalmente ao tempo de serviço. Qual o valor de Daniel?",
+                options: ["R$ 1.600,00", "R$ 1.800,00", "R$ 2.000,00", "R$ 2.100,00", "R$ 2.250,00"],
+                answer: 2,
+                feedback: "Gabarito: C. Total 9 partes. 3600/9 = 400. Daniel = 5 x 400 = R$ 2.000,00."
+            },
+            {
+                topic: "Porcentagem Sucessiva",
+                question: "Equipamento de R$ 1.500 sofre aumento de 20% e depois desconto de 10% sobre o novo valor. Preço final:",
+                options: ["R$ 1.500,00", "R$ 1.620,00", "R$ 1.650,00", "R$ 1.680,00", "R$ 1.710,00"],
+                answer: 1,
+                feedback: "Gabarito: B. 1500 x 1,20 = 1800. 1800 x 0,90 = R$ 1.620,00."
+            },
+            {
+                topic: "Regra de Três Composta",
+                question: "6 operários em 8h/dia pavimentam 240 m² em 4 dias. Quantos m² 10 operários em 6h/dia farão em 6 dias?",
+                options: ["360 m²", "400 m²", "450 m²", "480 m²", "500 m²"],
+                answer: 2,
+                feedback: "Gabarito: C. 240/x = (6/10) * (8/6) * (4/6) = 192/360 => x = 450 m²."
+            },
+            {
+                topic: "Média Ponderada",
+                question: "Notas: Específicos (peso 3, nota 8,0), Português (peso 2, nota 6,5), RLM (peso 1, nota 5,0). Média final:",
+                options: ["6,5", "6,8", "7,0", "7,2", "7,5"],
+                answer: 2,
+                feedback: "Gabarito: C. (24 + 13 + 5) / 6 = 42 / 6 = 7,0."
+            },
+            {
+                topic: "Juros Simples",
+                question: "Capital de R$ 8.000 a 1,5% a.m. por 8 meses. Qual o montante final quitado?",
+                options: ["R$ 8.960,00", "R$ 9.120,00", "R$ 9.200,00", "R$ 9.450,00", "R$ 9.600,00"],
+                answer: 0,
+                feedback: "Gabarito: A. J = 8000 * 0,015 * 8 = 960. M = 8000 + 960 = R$ 8.960,00."
+            },
+            {
+                topic: "Sistema de Equações",
+                question: "Total de 45 veículos (carros e motos) e 130 rodas no batalhão. Quantas motocicletas há no local?",
+                options: ["15", "20", "25", "30", "35"],
+                answer: 2,
+                feedback: "Gabarito: C. C + M = 45 e 4C + 2M = 130 => 4(45-M) + 2M = 130 => M = 25 motos."
+            },
+            {
+                topic: "Geometria • Área de Terreno",
+                question: "Terreno retangular com perímetro de 70 m. O comprimento mede 15 m a mais que a largura. Área:",
+                options: ["200 m²", "250 m²", "275 m²", "300 m²", "325 m²"],
+                answer: 1,
+                feedback: "Gabarito: B. 2(L+15) + 2L = 70 => 4L = 40 => L = 10m, C = 25m. Área = 10 x 25 = 250 m²."
+            },
+            {
+                topic: "Sequência Lógica",
+                question: "Observe a sequência: 3, 7, 15, 31, 63, ... Qual é o 7º elemento?",
+                options: ["127", "189", "247", "255", "511"],
+                answer: 3,
+                feedback: "Gabarito: D. Cada termo é 2n+1. 6º termo = 127; 7º termo = 2(127)+1 = 255."
+            },
+            {
+                topic: "Lógica de Argumentação",
+                question: "Premissas: 'Se alarme toca -> invasão'. 'Se invasão -> equipe acionada'. Sabe-se que a equipe NÃO foi acionada. Logo:",
+                options: ["O alarme tocou e não houve invasão.", "Houve invasão, mas o alarme não tocou.", "O alarme não tocou e não houve invasão.", "O alarme tocou porque a equipe estava ausente.", "A equipe foi acionada preventivamente."],
+                answer: 2,
+                feedback: "Gabarito: C. Por Modus Tollens: Não equipe -> Não invasão -> Não alarme."
+            }
+        ],
+
+        // BLOCO 03: INFORMÁTICA (10 QUESTÕES AUDITADAS)
+        informatica: [
+            {
+                topic: "Windows • Gerenciamento de Arquivos",
+                question: "Arrastar arquivo de C:\\Doc para C:\\Backup, e outro de C:\\Doc para o pendrive E:\\ realiza, respectivamente:",
+                options: ["Copiar e Mover.", "Mover e Copiar.", "Criar atalho e Mover.", "Copiar e Criar atalho.", "Mover e Mover."],
+                answer: 1,
+                feedback: "Gabarito: B. Na mesma unidade (C: para C:) = Mover. Entre unidades diferentes (C: para E:) = Copiar."
+            },
+            {
+                topic: "Windows • Atalhos",
+                question: "Para acessar o histórico da Área de Transferência no Windows e colar múltiplos itens, usa-se:",
+                options: ["Ctrl + Shift + V", "Alt + Tab", "Windows + V", "Windows + C", "Ctrl + Alt + Del"],
+                answer: 2,
+                feedback: "Gabarito: C. O atalho Windows + V abre o painel do histórico da área de transferência."
+            },
+            {
+                topic: "MS-Word • Formatação e Quebras",
+                question: "Para ter a primeira página em Retrato e a segunda em Paisagem no mesmo arquivo do Word, insere-se:",
+                options: ["Quebra de Linha.", "Quebra de Página Simples.", "Quebra de Coluna.", "Quebra de Seção.", "Marca de Parágrafo."],
+                answer: 3,
+                feedback: "Gabarito: D. Apenas a Quebra de Seção permite configurações de página independentes."
+            },
+            {
+                topic: "MS-Word • Alinhamento",
+                question: "No MS-Word em português, o atalho padrão para alinhar o texto como 'Justificado' é:",
+                options: ["Ctrl + J", "Ctrl + E", "Ctrl + G", "Ctrl + T", "Ctrl + Q"],
+                answer: 0,
+                feedback: "Gabarito: A. Ctrl + J = Justificado (Ctrl+E Centraliza, Ctrl+Q Esquerda, Ctrl+G Direita)."
+            },
+            {
+                topic: "MS-Excel • Fórmulas Condicionais",
+                question: "Com A1=5, A2=10, A3=15, A4=20, a fórmula =SE(MÉDIA(A1:A4)>=12; SOMA(A1:A2); SOMA(A3:A4)) resulta em:",
+                options: ["15", "25", "35", "50", "12,5"],
+                answer: 0,
+                feedback: "Gabarito: A. Média = 12,5 (Verdadeiro). SOMA(A1:A2) = 5 + 10 = 15."
+            },
+            {
+                topic: "MS-Excel • Referências de Células",
+                question: "Na célula C1 há '=$A$1+B1'. Ao copiar e colar em D2, a fórmula resultante será:",
+                options: ["=$B$2+C2", "=$A$1+C2", "=$A$2+B2", "=$B$1+C1", "=$A$1+B1"],
+                answer: 1,
+                feedback: "Gabarito: B. $A$1 é absoluto (trava) e B1 desloca 1 coluna e 1 linha para C2."
+            },
+            {
+                topic: "MS-PowerPoint • Estrutura",
+                question: "No MS-PowerPoint, o recurso que padroniza temas, fontes e logos em todos os slides de uma só vez é o:",
+                options: ["Transição de Slides.", "Painel de Animação.", "Slide Mestre.", "Botão de Ação.", "Estrutura de Tópicos."],
+                answer: 2,
+                feedback: "Gabarito: C. O Slide Mestre controla a estrutura visual global da apresentação."
+            },
+            {
+                topic: "MS-PowerPoint • Apresentação",
+                question: "Para iniciar a apresentação de slides a partir do slide atual selecionado, utiliza-se:",
+                options: ["F5", "Shift + F5", "Ctrl + F5", "Alt + F5", "F7"],
+                answer: 1,
+                feedback: "Gabarito: B. F5 inicia do primeiro; Shift + F5 inicia do slide atual."
+            },
+            {
+                topic: "Correio Eletrônico • Cco",
+                question: "Em e-mail enviado com Para, Cc e Cco, é correto afirmar:",
+                options: ["Para e Cc sabem que Cco recebeu.", "Cco não vê o endereço de Para e Cc.", "Se Cc responder a todos, Cco recebe.", "Cco recebe, mas seu endereço fica oculto para Para e Cc.", "Cco bloqueia anexos."],
+                answer: 3,
+                feedback: "Gabarito: D. O destinatário oculto em Cco não é visível para os outros destinatários."
+            },
+            {
+                topic: "Internet • Segurança HTTPS",
+                question: "O prefixo https:// e o ícone de cadeado no navegador indicam:",
+                options: ["Imunidade a vírus.", "Conexão criptografada entre navegador e servidor.", "Site governamental obrigatório.", "Download sem ocupar espaço em disco.", "Bloqueio de downloads externos."],
+                answer: 1,
+                feedback: "Gabarito: B. HTTPS utiliza SSL/TLS para garantir criptografia e integridade de dados."
+            }
+        ],
+
+        // BLOCO 04: CONHECIMENTOS ESPECÍFICOS (25 QUESTÕES AUDITADAS)
+        especificos: [
+            {
+                topic: "Direito Administrativo • Poderes",
+                question: "Com relação aos atos e poderes administrativos, assinale a alternativa correta:",
+                options: ["O Poder Disciplinar permite punir qualquer cidadão nas ruas.", "O Poder de Polícia tem como atributos discricionariedade, autoexecutoriedade e coercibilidade.", "A anulação ocorre por conveniência e gera efeitos ex nunc.", "A revogação decorre de ilegalidade com efeitos ex tunc.", "A imperatividade está presente em todos os atos enunciativos."],
+                answer: 1,
+                feedback: "Gabarito: B. Poder de polícia condiciona direitos em prol do interesse público."
+            },
+            {
+                topic: "Bens Públicos • Código Civil",
+                question: "Quanto à classificação dos bens públicos (Art. 98 a 103 CC):",
+                options: ["Bens de uso comum podem ser alienados sem desafetação.", "Bens dominicais estão sujeitos a usucapião.", "Bens de uso especial e comum são inalienáveis enquanto conservarem essa qualificação.", "O uso comum é sempre gratuito, sendo vedada taxa.", "Bens públicos sujeitam-se a penhora."],
+                answer: 2,
+                feedback: "Gabarito: C. Bens afetados são inalienáveis (Art. 100 do CC)."
+            },
+            {
+                topic: "Direito Constitucional • Direitos Fundamentais",
+                question: "Em relação aos Princípios e Garantias Fundamentais da CF/88, é INCORRETO afirmar:",
+                options: ["O Brasil busca a integração dos povos da América Latina.", "É livre a manifestação do pensamento, sendo garantido o anonimato nas denúncias.", "A casa é asilo inviolável do indivíduo.", "A lei penal não retroagirá, salvo para beneficiar o réu.", "Nenhuma pena passará da pessoa do condenado."],
+                answer: 1,
+                feedback: "Gabarito: B. O Art. 5º, IV da CF veda expressamente o anonimato."
+            },
+            {
+                topic: "Segurança Pública • Art. 144 CF",
+                question: "Sobre a Segurança Pública na CF/88 e a jurisprudência correlata:",
+                options: ["GCMs estão excluídas do SUSP.", "A Polícia Militar e os Bombeiros Militares são forças auxiliares e reserva do Exército.", "Municípios não podem criar guardas municipais.", "A PRF faz patrulhamento de vias municipais.", "GCM não pode prender em flagrante."],
+                answer: 1,
+                feedback: "Gabarito: B. Art. 144, § 6º da CF/88."
+            },
+            {
+                topic: "Administração Pública • Art. 37 CF",
+                question: "Analise: I. Concurso público; II. Contrato de desempenho; III. Direito de greve e sindicalização.",
+                options: ["Apenas I está correta.", "Apenas I e II estão corretas.", "Apenas II e III estão corretas.", "Todas as assertivas (I, II e III) estão corretas.", "Nenhuma está correta."],
+                answer: 3,
+                feedback: "Gabarito: D. Todas as assertivas reproduzem preceitos do Art. 37 da CF/88."
+            },
+            {
+                topic: "Direito Penal • Roubo",
+                question: "Sobre os crimes contra a pessoa e patrimônio no Código Penal:",
+                options: ["Meio cruel comunica-se ao coautor sem ciência.", "O roubo exige subtração com violência ou grave ameaça, sendo inadmissível modalidade culposa.", "Furto noturno aplica-se só a comércio 24h.", "Estelionato não exige induzimento em erro.", "Lesão corporal para salvar terceiro é inescusável."],
+                answer: 1,
+                feedback: "Gabarito: B. O roubo é crime estritamente doloso (Art. 157 CP)."
+            },
+            {
+                topic: "Direito Penal • Prevaricação",
+                question: "O funcionário público que retarda ou deixa de praticar ato de ofício para satisfazer interesse pessoal comete:",
+                options: ["Peculato.", "Concussão.", "Corrupção Passiva.", "Prevaricação.", "Extorsão."],
+                answer: 3,
+                feedback: "Gabarito: D. Prevaricação (Art. 319 do CP)."
+            },
+            {
+                topic: "Crimes por Particular • Resistência",
+                question: "Opor-se à execução de ato legal mediante violência ou ameaça a funcionário público competente tipifica:",
+                options: ["Resistência.", "Desobediência.", "Desacato.", "Corrupção Ativa.", "Usurpação de Função Pública."],
+                answer: 0,
+                feedback: "Gabarito: A. Resistência (Art. 329 do CP)."
+            },
+            {
+                topic: "Fé Pública • Uso de Documento Falso",
+                question: "Quanto aos crimes contra a Fé Pública, fazer uso de documento falsificado ou alterado sujeita o agente a:",
+                options: ["Pena de advertência apenas.", "Pena cominada à própria falsificação ou alteração.", "Crime de menor potencial.", "Isenção de pena se não houver prejuízo.", "Apenas multa administrativa."],
+                answer: 1,
+                feedback: "Gabarito: B. Art. 304 do Código Penal."
+            },
+            {
+                topic: "Direito Civil • Capacidade Jurídica",
+                question: "De acordo com o Código Civil (Art. 1º a 10):",
+                options: ["Menores de 18 são absolutamente incapazes.", "A incapacidade relativa cessa pela emancipação concedida pelos pais via instrumento público.", "Ébrios habituais são absolutamente incapazes.", "Personalidade jurídica surge com o óbito.", "Quem não puder exprimir vontade é absolutamente incapaz."],
+                answer: 1,
+                feedback: "Gabarito: B. Emancipação voluntária por escritura pública (Art. 5º CC)."
+            },
+            {
+                topic: "Direito Civil • Bens Imóveis",
+                question: "Considerando as disposições do Código Civil sobre bens (Art. 79 a 91):",
+                options: ["Direitos reais sobre imóveis e suas ações são considerados bens imóveis por lei.", "Materiais separados para reemprego perdem qualidade de imóveis.", "Móveis são apenas os de movimento próprio.", "Bens fungíveis não podem ser substituídos.", "Frutos não podem ser objeto de negócio."],
+                answer: 0,
+                feedback: "Gabarito: A. Art. 80, I do Código Civil."
+            },
+            {
+                topic: "CTB • Velocidades Regulamentares",
+                question: "Nas vias urbanas sem sinalização regulamentadora, a velocidade máxima na via de trânsito rápido é:",
+                options: ["60 km/h.", "80 km/h.", "90 km/h.", "100 km/h.", "110 km/h."],
+                answer: 1,
+                feedback: "Gabarito: B. Trânsito rápido sem placa = 80 km/h (Art. 61 CTB)."
+            },
+            {
+                topic: "Crimes de Trânsito • Art. 302 CTB",
+                question: "O homicídio culposo na direção de veículo tem pena aumentada de 1/3 a metade se o condutor:",
+                options: ["Não possuir Permissão para Dirigir ou Carteira de Habilitação.", "Estiver em velocidade inferior à mínima.", "Estiver sozinho no veículo.", "Possuir veículo com mais de 10 anos.", "Não estiver com o comprovante de IPVA."],
+                answer: 0,
+                feedback: "Gabarito: A. Art. 302, § 1º, I do CTB."
+            },
+            {
+                topic: "Lei 13.022/2014 • Estatuto das GCMs",
+                question: "É princípio mínimo de atuação das Guardas Municipais:",
+                options: ["Patrulhamento exclusivo em quartéis federais.", "Preservação da vida, redução do sofrimento e diminuição das perdas.", "Uso de estrutura hierárquica idêntica às Forças Armadas.", "Subordinação operacional à Polícia Civil.", "Uso preferencial de fardamento camuflado militar."],
+                answer: 1,
+                feedback: "Gabarito: B. Art. 3º, II da Lei Federal nº 13.022/2014."
+            },
+            {
+                topic: "Estatuto do Desarmamento • Porte GCM",
+                question: "Sobre o porte de arma de fogo pelos integrantes das Guardas Municipais (STF ADI 5948):",
+                options: ["Vedado para cidades com menos de 50 mil hab.", "Garantido em serviço e fora dele, em todo o território nacional, observados requisitos legais.", "Exclusivo dos comandantes fora de serviço.", "Depende de autorização discricionária do Prefeito.", "Não exige teste de tiro."],
+                answer: 1,
+                feedback: "Gabarito: B. O STF derrubou restrições populacionais para porte de arma na GCM."
+            },
+            {
+                topic: "Lei 13.869/2019 • Abuso de Autoridade",
+                question: "À luz da Lei de Abuso de Autoridade, é correto afirmar:",
+                options: ["Sanções civis e penais não podem cumular.", "A divergência na interpretação de lei ou na avaliação de fatos e provas não configura abuso.", "O uso de algemas é proibido em qualquer hipótese.", "Apenas servidores federais cometem o crime.", "Ação é sempre privada."],
+                answer: 1,
+                feedback: "Gabarito: B. Art. 1º, § 2º veda o crime de hermenêutica."
+            },
+            {
+                topic: "ECA • Ato Infracional",
+                question: "Adolescente apreendido em flagrante por ato infracional pela GCM deve ser:",
+                options: ["Encaminhado à cadeia pública de adultos.", "Conduzido à Delegacia competente, mantido separado de adultos e comunicados juiz e família.", "Interrogado sob castigo físico na base GCM.", "Liberado sumariamente no local.", "Condenado imediatamente pelo guarda."],
+                answer: 1,
+                feedback: "Gabarito: B. Arts. 172 e 178 do ECA."
+            },
+            {
+                topic: "Lei Maria da Penha • Lei 11.340/06",
+                question: "Segundo a Lei Maria da Penha, a violência doméstica e familiar contra a mulher constitui:",
+                options: ["Violação dos direitos humanos.", "Crime de menor potencial ofensivo com fiança imediata pelo delegado em qualquer caso.", "Infração administrativa municipal.", "Apenas causa de divórcio litigioso.", "Competência exclusiva da Justiça Federal."],
+                answer: 0,
+                feedback: "Gabarito: A. Art. 6º da Lei Maria da Penha."
+            },
+            {
+                topic: "Lei de Drogas • Art. 28",
+                question: "Para determinar se a droga destinava-se a consumo pessoal ou tráfico, o juiz considerará:",
+                options: ["Apenas a palavra do suspeito.", "Exclusivamente o valor em dinheiro.", "Quantidade, natureza, local, condições da ação, conduta e antecedentes do agente.", "Apenas se o indivíduo possui residência fixa.", "Apenas teste toxicológico."],
+                answer: 2,
+                feedback: "Gabarito: C. Art. 28, § 2º da Lei 11.343/2006."
+            },
+            {
+                topic: "Lei 13.060/2014 • Menor Potencial Ofensivo",
+                question: "Sobre o uso da força pelos agentes de segurança pública:",
+                options: ["Não é legítimo o uso de arma de fogo contra pessoa em fuga desarmada sem risco de morte.", "Arma de fogo deve ser sempre a primeira opção.", "Agentes não precisam de treino com tecnologias não letais.", "Disparo contra veículo em bloqueio é obrigatório.", "Sprays de pimenta são proibidos para GCM."],
+                answer: 0,
+                feedback: "Gabarito: A. Art. 2º da Lei 13.060/2014 proíbe disparos contra fugitivos desarmados."
+            },
+            {
+                topic: "SUSP • Lei 13.675/2018",
+                question: "De acordo com o Sistema Único de Segurança Pública (SUSP), as Guardas Municipais são:",
+                options: ["Integrantes estratégicos e operacionais do SUSP.", "Órgãos extintos da segurança pública.", "Tropas militares sob comando do Exército.", "Entidades sem poder de atuação ostensiva.", "Instituições privadas terceirizadas."],
+                answer: 0,
+                feedback: "Gabarito: A. Art. 9º, § 2º, VII da Lei 13.675/2018 e STF ADPF 995."
+            },
+            {
+                topic: "Estatuto da Pessoa Idosa • Crime",
+                question: "Assinale a afirmativa INCORRETA sobre a proteção à pessoa idosa:",
+                options: ["Assegurada atenção integral pelo SUS.", "Crime recusar atendimento médico sem justa causa.", "Prioridade na tramitação processual.", "Transporte coletivo urbano gratuito aos maiores de 65 anos.", "O abandono de pessoa idosa em hospital é conduta atípica, sem sanção penal."],
+                answer: 4,
+                feedback: "Gabarito: E. Abandonar idoso em hospital é CRIME punido com detenção (Art. 98)."
+            },
+            {
+                topic: "Processo Penal • Busca e Flagrante",
+                question: "Sobre busca pessoal e flagrante (Arts. 240, 244 e 301 do CPP):",
+                options: ["Qualquer do povo pode e autoridades devem prender quem estiver em flagrante.", "Busca pessoal exige fundada suspeita em elementos concretos.", "Flagrante impróprio ocorre na perseguição logo após o crime.", "A mera intuição policial autoriza busca veicular.", "As alternativas A, B e C estão corretas."],
+                answer: 4,
+                feedback: "Gabarito: E. As opções A, B e C consolidam dispositivos do CPP e entendimento do STJ."
+            },
+            {
+                topic: "Primeiros Socorros • Avaliação Primária",
+                question: "Na chegada a um acidente de trânsito com vítima desacordada, a conduta prioritária inicial é:",
+                options: ["Puxar a vítima para fora do carro pelos braços.", "Garantir a segurança do local, checar responsividade, acionar socorro especializado e checar sinais vitais.", "Oferecer água e alimentos imediatamente.", "Retirar o capacete do motociclista de imediato.", "Fazer torniquete no pescoço."],
+                answer: 1,
+                feedback: "Gabarito: B. Segurança de cena + responsividade + acionamento de SAMU/Bombeiros."
+            },
+            {
+                topic: "Primeiros Socorros • Parada Cardiorrespiratória",
+                question: "No atendimento de RCP em adulto em parada cardiorrespiratória, a diretriz correta é:",
+                options: ["Compressões torácicas contínuas com frequência de 100 a 120 por minuto no centro do tórax.", "Compressões de apenas 30 por minuto com pausas longas.", "Colocar a vítima de bruços.", "Interromper a massagem após 30 segundos.", "Aguardar o médico sem fazer nada."],
+                answer: 0,
+                feedback: "Gabarito: A. Frequência recomendada de 100 a 120 compressões/minuto (5 a 6 cm de profundidade)."
+            }
+        ],
+
+        // PROVA OFICIAL GCM AVANÇA SP (COM TEXTOS E ENUNCIADOS COMPLETOS)
+        oficial: [
+            {
+                topic: "Oficial Avança SP • Q01 • Interpretação",
+                readingText: textoOficialAmazonas,
+                question: "De acordo com o texto acima, é correto afirmar que:",
+                options: [
+                    "Restos mortais possivelmente pertencentes às guerreiras Amazonas apontam dedos deformados apenas pela prática intensa da caça.",
+                    "Características atribuídas na ficção à comunidade das Amazonas, assim como a sua possível existência, são corroboradas por alguns achados arqueológicos.",
+                    "As histórias de Pentesiléia, de Hipólita e da Mulher Maravilha dizem respeito a três diferentes grupos da Rússia, Azerbaijão e Grécia.",
+                    "Evidências encontradas recentemente apontam que Pentesiléia e Hipólita realmente pertenceram à comunidade das guerreiras.",
+                    "As evidências pelas quais se confirmou a existência das Amazonas são os túmulos com joias e o relato de Homero em A Ilíada."
+                ],
+                answer: 1,
+                feedback: "Gabarito Oficial Avança SP: B. Os achados arqueológicos em túmulos na Rússia e no Azerbaijão corroboram a existência de mulheres guerreiras conforme a ficção e as lendas gregas."
+            },
+            {
+                topic: "Oficial Avança SP • Q02 • Sintaxe",
+                readingText: textoOficialAmazonas,
+                question: "Considere o excerto do texto: 'Embora as histórias contidas no poema A Ilíada de Homero sejam alvos de debates sobre a sua existência real ou não (...), cada vez mais evidências vêm mostrando que mulheres guerreiras como as Amazonas podem realmente ter existido.' A relação estabelecida pela oração introduzida por 'embora' é de:",
+                options: ["condição.", "causa.", "explicação.", "comparação.", "concessão."],
+                answer: 4,
+                feedback: "Gabarito Oficial Avança SP: E. 'Embora' é uma conjunção subordinativa concessiva (expressa quebra de expectativa/concessão)."
+            },
+            {
+                topic: "Oficial Avança SP • Q03 • Classes Gramaticais",
+                question: "Analise o excerto: 'Isso mostra que há verdade por trás dos mitos e lendas da Grécia antiga.' Dentre as palavras a seguir que ocorrem no excerto, aquela que pertence à classe de ADVÉRBIO é:",
+                options: ["isso.", "há.", "por.", "trás.", "antiga."],
+                answer: 3,
+                feedback: "Gabarito Oficial Avança SP: D. 'Trás' é advérbio de lugar integrante da locução prepositiva 'por trás de'."
+            },
+            {
+                topic: "Oficial Avança SP • Q06 • Colocação Pronominal",
+                question: "Analise as sentenças quanto à colocação pronominal:\nI. '...grupos de mulheres guerreiras na antiga Grécia estão mais próximas da realidade do que se acreditava.'\nII. '...Aquiles, matou outra rainha, Pentesiléia, apenas para depois se apaixonar por ela...'\nA colocação proclítica em ambas as sentenças decorre:",
+                options: [
+                    "da presença da conjunção comparativa anteposta ao verbo em I, e do advérbio de tempo na mesma condição em II.",
+                    "da presença de um pronome relativo anteposto ao verbo em I, e do advérbio de tempo na mesma condição em II.",
+                    "da conjugação dos verbos no pretérito imperfeito em I, e no infinitivo em II.",
+                    "da conjugação dos verbos no pretérito perfeito em I, e no infinitivo em II.",
+                    "da conjugação dos verbos no pretérito imperfeito em I, e no particípio em II."
+                ],
+                answer: 0,
+                feedback: "Gabarito Oficial Avança SP: A. Em I, a conjunção comparativa 'que' atrai o pronome; em II, o advérbio de tempo 'depois' exige próclise."
+            },
+            {
+                topic: "Oficial Avança SP • Q11 • Matemática",
+                question: "Uma pessoa definiu a meta de beber 6 litros de água por dia. Tirando as 8 horas que dorme, ela pretende beber uma quantia a cada 40 minutos (começando 40 min após acordar e terminando antes de dormir = 24 ingestões). Qual volume em mililitros deve ser ingerido por vez?",
+                options: ["250 ml.", "200 ml.", "335 ml.", "240 ml.", "125 ml."],
+                answer: 0,
+                feedback: "Gabarito Oficial Avança SP: A. Tempo acordado = 16h = 960 min. Doses = 960 / 40 = 24 doses. Volume = 6000 ml / 24 = 250 ml."
+            },
+            {
+                topic: "Oficial Avança SP • Q16 • Informática",
+                question: "Dentro do Microsoft Windows, a estrutura utilizada para organizar pastas e arquivos em seu disco rígido é intitulada de:",
+                options: ["Diretório.", "Antivírus.", "Seletor.", "Site de busca.", "Office."],
+                answer: 0,
+                feedback: "Gabarito Oficial Avança SP: A. 'Diretório' (ou pasta) é a estrutura hierárquica de organização de arquivos no disco."
+            },
+            {
+                topic: "Oficial Avança SP • Q19 • MS-Word",
+                question: "Para mover o cursor para o final de um documento criado no Microsoft Word, basta selecionar o atalho de teclado:",
+                options: ["Ctrl + T.", "Ctrl + Enter.", "Ctrl + Home.", "Ctrl + End.", "Ctrl + B."],
+                answer: 3,
+                feedback: "Gabarito Oficial Avança SP: D. Ctrl + End move o cursor para o final do documento (Ctrl + Home move para o início)."
+            },
+            {
+                topic: "Oficial Avança SP • Q21 • Abuso de Autoridade",
+                question: "Em relação ao Art. 1º da Lei nº 13.869/2019 (Abuso de Autoridade), a legislação define que os crimes são:",
+                options: [
+                    "cometidos por agente público, servidor ou não, que, no exercício de suas funções ou a pretexto de exercê-las, abuse do poder que lhe tenha sido atribuído.",
+                    "definidos pela divergência na interpretação de lei praticada apenas por servidores de carreira.",
+                    "definidos como divergência na avaliação de fatos e provas por qualquer agente.",
+                    "cometidos apenas por agentes de segurança militar.",
+                    "cometidos por agente público apenas se for titular de cargo de chefia."
+                ],
+                answer: 0,
+                feedback: "Gabarito Oficial Avança SP: D (adaptado). O crime é próprio de agente público, servidor ou não, praticado com abuso de poder."
+            },
+            {
+                topic: "Oficial Avança SP • Q23 • Homicídio Simples",
+                question: "De acordo com o Artigo 121 do Código Penal, qual é a pena prevista para o crime de Homicídio Simples?",
+                options: [
+                    "Pena - reclusão, de seis a vinte anos.",
+                    "Pena - reclusão, de doze a trinta anos.",
+                    "Pena - detenção, de seis a vinte anos.",
+                    "Pena - reclusão, de seis a doze anos.",
+                    "Pena - reclusão, de 6 (seis) meses a 2 (dois) anos."
+                ],
+                answer: 0,
+                feedback: "Gabarito Oficial Avança SP: A. O preceito secundário do Homicídio Simples (Art. 121, caput) é reclusão, de 6 a 20 anos."
+            },
+            {
+                topic: "Oficial Avança SP • Q24 • Requisitos GCM",
+                question: "Assinale a alternativa correta de acordo com o Estatuto Geral das Guardas Municipais (Lei 13.022/2014). São requisitos básicos para investidura no cargo:",
+                options: [
+                    "nível médio incompleto de escolaridade;",
+                    "idade mínima de 21 (vinte e um) anos;",
+                    "nacionalidade brasileira;",
+                    "inaptidão física, mental e psicológica comprovada;",
+                    "privação temporária dos direitos políticos;"
+                ],
+                answer: 2,
+                feedback: "Gabarito Oficial Avança SP: C. A nacionalidade brasileira é requisito básico expresso no Art. 10 da Lei 13.022/2014 (idade mínima é 18 anos e escolaridade é nível médio completo)."
+            }
+        ]
+    };
+
+    /* FLASHCARDS TÁTICOS */
+    const tacticalFlashcards = [
+        {
+            tag: "Direito Penal • Art. 319",
+            front: "Qual é o elemento subjetivo específico indispensável para caracterizar o crime de Prevaricação?",
+            back: "Satisfazer INTERESSE ou SENTIMENTO PESSOAL (se não houver esse dolo específico, não há prevaricação)."
+        },
+        {
+            tag: "Direito Penal • Art. 316 vs. 317",
+            front: "Qual o verbo-núcleo que diferencia Concussão de Corrupção Passiva?",
+            back: "Concussão = EXIGIR vantagem indevida.\nCorrupção Passiva = SOLICITAR, RECEBER ou ACEITAR promessa."
+        },
+        {
+            tag: "Direito Administrativo • Invalidação",
+            front: "Qual o efeito temporal da ANULAÇÃO e da REVOGAÇÃO de um ato administrativo?",
+            back: "Anulação (Ato Ilegal) = Efeito EX TUNC (Retroage).\nRevogação (Mérito/Conveniência) = Efeito EX NUNC (Não retroage)."
+        },
+        {
+            tag: "Legislação Especial • STF ADI 5948",
+            front: "O Guarda Municipal tem direito ao porte de arma de fogo fora de serviço?",
+            back: "SIM! O STF declarou inconstitucional qualquer limite populacional. O porte vale em todo território nacional, em serviço ou fora dele."
+        },
+        {
+            tag: "Uso da Força • Lei 13.060/2014",
+            front: "É permitido disparar arma de fogo contra veículo que desobedece a bloqueio policial em via pública?",
+            back: "NÃO! É vedado o disparo contra veículo que fure bloqueio quando não houver risco real e imediato de morte/lesão grave."
+        },
+        {
+            tag: "Língua Portuguesa • Crase Proibida",
+            front: "Mnemônico dos casos em que NUNCA ocorre crase?",
+            back: "Antes de MASCULINO, VERBO no infinitivo, PRONOME pessoal/tratamento, PALAVRAS REPETIDAS e 'A' no singular diante de plural."
+        }
+    ];
+
+    let currentCardIdx = 0;
+
+    /* MAPAS MENTAIS CONTEÚDO */
+    const mindMapsData = {
+        adm: {
+            title: "⚖️ Atributos e Requisitos do Ato Administrativo",
+            content: `
+                <div style="line-height:1.7;">
+                    <p><strong>Requisitos de Validade (CO-FI-FO-MO-OB):</strong></p>
+                    <p>• <strong>Competência:</strong> Poder legal atribuído ao agente público.</p>
+                    <p>• <strong>Finalidade:</strong> Interesse público (desvio gera nulidade).</p>
+                    <p>• <strong>Forma:</strong> Geralmente escrita e solene.</p>
+                    <p>• <strong>Motivo:</strong> Situação fática e jurídica que enseja o ato.</p>
+                    <p>• <strong>Objeto:</strong> Efeito jurídico imediato gerado.</p>
+                    <hr style="margin:12px 0; border:1px dashed var(--gcm-border);">
+                    <p><strong>Atributos do Ato (P-A-T-I):</strong> Presunção de Legitimidade, Autoexecutoriedade, Tipicidade e Imperatividade.</p>
+                </div>
+            `
+        },
+        penal: {
+            title: "🚔 Crimes Praticados por Funcionários Públicos",
+            content: `
+                <div style="line-height:1.7;">
+                    <p>• <strong>Peculato (Art. 312):</strong> Apropriar-se ou desviar dinheiro/bem móvel público ou particular em razão do cargo.</p>
+                    <p>• <strong>Concussão (Art. 316):</strong> EXIGIR vantagem indevida em razão da função.</p>
+                    <p>• <strong>Corrupção Passiva (Art. 317):</strong> SOLICITAR ou RECEBER vantagem indevida, ou aceitar promessa.</p>
+                    <p>• <strong>Prevaricação (Art. 319):</strong> Retardar ou deixar de praticar ato de ofício para satisfazer INTERESSE PESSOAL.</p>
+                    <p>• <strong>Condescendência Criminosa (Art. 320):</strong> Deixar de responsabilizar subordinado por indulgência (pena/piedade).</p>
+                </div>
+            `
+        },
+        crase: {
+            title: "✏️ Guia Definitivo da Crase",
+            content: `
+                <div style="line-height:1.7;">
+                    <p>• <strong>Regra de Ouro:</strong> Preposição A + Artigo Feminino A = À.</p>
+                    <p>• <strong>Teste de Troca:</strong> Substitua a palavra feminina por masculina. Se virar <em>'AO'</em>, ocorre crase (ex.: Vou à delegacia -> Vou AO batalhão).</p>
+                    <p>• <strong>Casos Facultativos (Mnemônico 'Até Minha Maria'):</strong></p>
+                    <p>1. Após a preposição 'Até'.</p>
+                    <p>2. Antes de Pronome Possessivo Feminino Singular (minha, sua, tua).</p>
+                    <p>3. Antes de Nome Próprio Feminino.</p>
+                </div>
+            `
+        },
+        windows: {
+            title: "💻 Atalhos e Macetes de Informática",
+            content: `
+                <div style="line-height:1.7;">
+                    <p>• <strong>Windows + V:</strong> Histórico da Área de Transferência (múltiplos itens).</p>
+                    <p>• <strong>Shift + Delete:</strong> Exclui permanentemente sem passar pela Lixeira.</p>
+                    <p>• <strong>Word (Ctrl + J):</strong> Justifica o texto | <strong>Ctrl + Enter:</strong> Quebra de Página.</p>
+                    <p>• <strong>Excel ($A$1):</strong> Cifrão trava coluna e linha (Referência Absoluta).</p>
+                    <p>• <strong>PowerPoint (Shift + F5):</strong> Apresenta a partir do slide atual.</p>
+                </div>
+            `
+        }
+    };
+
+    /* SIMULADOR TÁTICO DE DECISÃO RÁPIDA (BOTÃO 04) */
+    const tacticalScenarios = [
+        {
+            scenario: "Em patrulhamento, a guarnição GCM depara-se com um suspeito correndo a pé, desarmado, após furtar uma bicicleta. De acordo com a Lei nº 13.060/2014, a conduta correta sobre arma de fogo é:",
+            options: [
+                "Efetuar disparo de advertência para cima.",
+                "Disparar contra os membros inferiores do fugitivo.",
+                "É proibido o disparo de arma de fogo contra pessoa em fuga desarmada sem risco letal.",
+                "Efetuar disparos nos pneus de carros próximos."
+            ],
+            answer: 2,
+            feedback: "Correto! O Art. 2º da Lei 13.060/2014 proíbe expressamente o disparo contra pessoa em fuga desarmada."
+        },
+        {
+            scenario: "Durante ronda em praça pública, a equipe avista dois indivíduos em fundada suspeita com volume suspeito na cintura. A realização de busca pessoal (revista):",
+            options: [
+                "Exige mandado judicial prévio do juiz criminal.",
+                "Independe de mandado judicial, exigindo fundada suspeita objetiva e justificada.",
+                "É proibida para guardas municipais.",
+                "Pode ser feita por mera intuição subjetiva sem justificativa."
+            ],
+            answer: 1,
+            feedback: "Correto! O Art. 244 do CPP autoriza a busca pessoal sem mandado em presença de fundada suspeita concreta."
+        }
+    ];
+
+    let currentTacticalIdx = 0;
+    let tacticalTimerInterval = null;
+
+    /* CONTROLE DE ÁUDIO SINTETIZADO */
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        const btn = document.getElementById('btn-toggle-sound');
+        const icon = document.getElementById('sound-icon');
+        const text = document.getElementById('sound-text');
+        if (soundEnabled) {
+            btn.className = "control-pill-btn active";
+            icon.className = "fa-solid fa-volume-high";
+            text.innerText = "Som: ON";
+            playBeep('pop');
+        } else {
+            btn.className = "control-pill-btn";
+            icon.className = "fa-solid fa-volume-xmark";
+            text.innerText = "Som: OFF";
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        playBeep('pop');
+    }
+
+    function playBeep(type) {
+        if (!soundEnabled) return;
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(520, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(680, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } else {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.06);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.06);
+            }
+        } catch(e){}
+    }
+
+    function addXP(points) {
+        userState.xp += points;
+        userState.gems += Math.floor(points / 2);
+        localStorage.setItem('gcm_xp', userState.xp);
+        document.getElementById('user-xp').innerText = userState.xp + " XP";
+        document.getElementById('user-gems').innerText = userState.gems;
+
+        const rankEl = document.getElementById('user-rank');
+        if (userState.xp >= 600) {
+            rankEl.innerHTML = '<i class="fa-solid fa-crown" style="color:var(--gcm-gold)"></i> Inspetor Chefe GCM';
+        } else if (userState.xp >= 300) {
+            rankEl.innerHTML = '<i class="fa-solid fa-medal" style="color:var(--gcm-blue)"></i> Inspetor GCM';
+        } else {
+            rankEl.innerHTML = '<i class="fa-solid fa-shield-halved" style="color:var(--gcm-green)"></i> Guarda Municipal';
+        }
+    }
+
+    /* SISTEMA DE NAVEGAÇÃO ENTRE TELAS */
+    function hideAllScreens() {
+        document.getElementById('screen-home').classList.add('hidden');
+        document.getElementById('screen-quiz').classList.add('hidden');
+        document.getElementById('screen-flashcards').classList.add('hidden');
+        document.getElementById('screen-mindmaps').classList.add('hidden');
+        document.getElementById('screen-tactical').classList.add('hidden');
+        document.getElementById('screen-inspiration').classList.add('hidden');
+        document.getElementById('screen-result').classList.add('hidden');
+        document.getElementById('btn-quiz-next').classList.add('hidden');
+        clearInterval(tacticalTimerInterval);
+    }
+
+    function showHomeScreen() {
+        hideAllScreens();
+        document.getElementById('screen-home').classList.remove('hidden');
+        playBeep('pop');
+    }
+
+    /* MOTOR DO QUIZ */
+    let currentQuizState = {
+        subjectKey: '',
+        questions: [],
+        currentIndex: 0,
+        selectedOption: null,
+        answered: false,
+        correctCount: 0,
+        wrongCount: 0
+    };
+
+    function startQuizSubject(subjectKey) {
+        if (!checkCPF()) return;
+        const qList = appDatabase[subjectKey] || [];
+        if (qList.length === 0) return;
+
+        currentQuizState = {
+            subjectKey: subjectKey,
+            questions: qList,
+            currentIndex: 0,
+            selectedOption: null,
+            answered: false,
+            correctCount: 0,
+            wrongCount: 0
+        };
+
+        hideAllScreens();
+        document.getElementById('screen-quiz').classList.remove('hidden');
+        document.getElementById('btn-quiz-next').classList.remove('hidden');
+        renderQuizQuestion();
+        playBeep('pop');
+    }
+
+    function startOfficialTest() {
+        if (!checkCPF()) return;
+        startQuizSubject('oficial');
+    }
+
+    function renderQuizQuestion() {
+        const q = currentQuizState.questions[currentQuizState.currentIndex];
+        document.getElementById('quiz-counter').innerText = `Questão ${currentQuizState.currentIndex + 1} de ${currentQuizState.questions.length}`;
+        
+        let titleLabel = "Simulado";
+        if (currentQuizState.subjectKey === 'portugues') titleLabel = "Bloco 01 • Língua Portuguesa";
+        else if (currentQuizState.subjectKey === 'matematica') titleLabel = "Bloco 02 • Matemática & Raciocínio Lógico";
+        else if (currentQuizState.subjectKey === 'informatica') titleLabel = "Bloco 03 • Noções de Informática";
+        else if (currentQuizState.subjectKey === 'especificos') titleLabel = "Bloco 04 • Conhecimentos Específicos GCM";
+        else if (currentQuizState.subjectKey === 'oficial') titleLabel = "Prova Oficial Avança SP • Araçariguama";
+
+        document.getElementById('quiz-module-title').innerText = titleLabel;
+        document.getElementById('quiz-topic').innerText = q.topic;
+        document.getElementById('quiz-question-text').innerText = q.question;
+
+        // Renderiza o Texto de Apoio / Leitura se a questão tiver
+        const readingBox = document.getElementById('quiz-reading-box');
+        if (q.readingText) {
+            readingBox.innerHTML = `
+                <div class="reading-box-header">
+                    <i class="fa-solid fa-book-open"></i> Texto de Leitura para a Questão:
+                </div>
+                <div>${q.readingText}</div>
+            `;
+            readingBox.classList.remove('hidden');
+        } else {
+            readingBox.classList.add('hidden');
+        }
+
+        const feedbackBox = document.getElementById('quiz-feedback-box');
+        feedbackBox.classList.add('hidden');
+
+        const container = document.getElementById('quiz-options-container');
+        container.innerHTML = "";
+
+        q.options.forEach((optText, idx) => {
+            const item = document.createElement('div');
+            item.className = "option-item";
+            item.innerHTML = `<span style="width:24px; height:24px; border-radius:50%; background:#e2e8f0; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:900;">${String.fromCharCode(65+idx)}</span> <span>${optText}</span>`;
+            item.onclick = () => selectOption(idx);
+            container.appendChild(item);
+        });
+
+        currentQuizState.selectedOption = null;
+        currentQuizState.answered = false;
+
+        const btnNext = document.getElementById('btn-quiz-next');
+        btnNext.innerText = "Verificar Resposta";
+        btnNext.className = "btn-duo btn-gray btn-disabled";
+        btnNext.disabled = true;
+    }
+
+    function selectOption(idx) {
+        if (currentQuizState.answered) return;
+        currentQuizState.selectedOption = idx;
+        document.querySelectorAll('#quiz-options-container .option-item').forEach((el, i) => {
+            if (i === idx) el.classList.add('selected');
+            else el.classList.remove('selected');
+        });
+
+        const btnNext = document.getElementById('btn-quiz-next');
+        btnNext.className = "btn-duo btn-green";
+        btnNext.disabled = false;
+        playBeep('pop');
+    }
+
+    function handleQuizAction() {
+        if (!currentQuizState.answered) {
+            checkAnswer();
+        } else {
+            currentQuizState.currentIndex++;
+            if (currentQuizState.currentIndex < currentQuizState.questions.length) {
+                renderQuizQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+    }
+
+    function checkAnswer() {
+        currentQuizState.answered = true;
+        const q = currentQuizState.questions[currentQuizState.currentIndex];
+        const isCorrect = (currentQuizState.selectedOption === q.answer);
+        const options = document.querySelectorAll('#quiz-options-container .option-item');
+
+        options.forEach((el, i) => {
+            el.onclick = null;
+            if (i === q.answer) el.classList.add('correct');
+            else if (i === currentQuizState.selectedOption && !isCorrect) el.classList.add('wrong');
+        });
+
+        const fb = document.getElementById('quiz-feedback-box');
+        fb.classList.remove('hidden');
+        if (isCorrect) {
+            currentQuizState.correctCount++;
+            fb.style.background = "#f0fdf4";
+            fb.style.color = "#166534";
+            fb.style.border = "2px solid #bbf7d0";
+            fb.innerHTML = `<strong>🎉 Resposta Correta!</strong><br>${q.feedback}`;
+            playBeep('correct');
+        } else {
+            currentQuizState.wrongCount++;
+            fb.style.background = "#fef2f2";
+            fb.style.color = "#991b1b";
+            fb.style.border = "2px solid #fecaca";
+            fb.innerHTML = `<strong>❌ Incorreto! (Gabarito: ${String.fromCharCode(65 + q.answer)})</strong><br>${q.feedback}`;
+            playBeep('wrong');
+        }
+
+        const btnNext = document.getElementById('btn-quiz-next');
+        btnNext.innerText = "Próxima Questão →";
+        btnNext.className = "btn-duo btn-blue";
+    }
+
+    function finishQuiz() {
+        hideAllScreens();
+        document.getElementById('screen-result').classList.remove('hidden');
+        const correct = currentQuizState.correctCount;
+        const wrong = currentQuizState.wrongCount;
+        const total = currentQuizState.questions.length;
+        const accuracy = Math.round((correct / total) * 100);
+        const xpEarned = correct * 25;
+
+        document.getElementById('res-correct').innerText = correct;
+        document.getElementById('res-wrong').innerText = wrong;
+        document.getElementById('res-accuracy').innerText = accuracy + "%";
+        document.getElementById('res-xp').innerText = "+" + xpEarned;
+        document.getElementById('res-cpf-tag').innerText = "Candidato Autenticado • CPF: " + (candidatoCPF || "Não informado");
+
+        addXP(xpEarned);
+        playBeep('correct');
+    }
+
+    /* SISTEMA DE FLASHCARDS */
+    function openFlashcardsSection() {
+        if (!checkCPF()) return;
+        hideAllScreens();
+        document.getElementById('screen-flashcards').classList.remove('hidden');
+        renderFlashcard();
+        playBeep('pop');
+    }
+
+    function renderFlashcard() {
+        const card = tacticalFlashcards[currentCardIdx];
+        document.getElementById('fc-tag').innerText = `Card ${currentCardIdx + 1} de ${tacticalFlashcards.length} • ${card.tag}`;
+        document.getElementById('fc-front-text').innerText = card.front;
+        document.getElementById('fc-back-text').innerText = card.back;
+        document.getElementById('flashcard-box').classList.remove('flipped');
+    }
+
+    function flipFlashcard() {
+        document.getElementById('flashcard-box').classList.toggle('flipped');
+        playBeep('pop');
+    }
+
+    function nextFlashcard() {
+        currentCardIdx = (currentCardIdx + 1) % tacticalFlashcards.length;
+        renderFlashcard();
+        playBeep('pop');
+    }
+
+    function prevFlashcard() {
+        currentCardIdx = (currentCardIdx - 1 + tacticalFlashcards.length) % tacticalFlashcards.length;
+        renderFlashcard();
+        playBeep('pop');
+    }
+
+    /* SISTEMA DE MAPAS MENTAIS */
+    function openMindMapsSection() {
+        if (!checkCPF()) return;
+        hideAllScreens();
+        document.getElementById('screen-mindmaps').classList.remove('hidden');
+        renderMindMap('adm');
+        playBeep('pop');
+    }
+
+    function renderMindMap(key) {
+        const data = mindMapsData[key];
+        const container = document.getElementById('mindmap-viewer');
+        container.innerHTML = `<h3 style="font-family:'Fredoka'; font-size:18px; color:var(--gcm-blue); margin-bottom:10px;">${data.title}</h3>${data.content}`;
+        playBeep('pop');
+    }
+
+    /* MISSÃO TÁTICA: DECISÃO RÁPIDA (BOTÃO 04) */
+    function openTacticalSimulator() {
+        if (!checkCPF()) return;
+        hideAllScreens();
+        document.getElementById('screen-tactical').classList.remove('hidden');
+        currentTacticalIdx = 0;
+        loadTacticalScenario();
+        playBeep('pop');
+    }
+
+    function loadTacticalScenario() {
+        const item = tacticalScenarios[currentTacticalIdx];
+        document.getElementById('tactical-scenario-text').innerText = item.scenario;
+        const container = document.getElementById('tactical-options-container');
+        container.innerHTML = "";
+
+        const fb = document.getElementById('tactical-feedback-box');
+        fb.classList.add('hidden');
+
+        item.options.forEach((optText, idx) => {
+            const btn = document.createElement('div');
+            btn.className = "option-item";
+            btn.innerHTML = `<span style="font-weight:900;">${idx+1}.</span> <span>${optText}</span>`;
+            btn.onclick = () => checkTacticalChoice(idx);
+            container.appendChild(btn);
+        });
+
+        // Inicia Cronômetro Tático de 30s
+        let timeLeft = 30;
+        const countEl = document.getElementById('tactical-timer-count');
+        const fillEl = document.getElementById('tactical-timer-fill');
+        fillEl.style.width = "100%";
+        clearInterval(tacticalTimerInterval);
+
+        tacticalTimerInterval = setInterval(() => {
+            timeLeft--;
+            countEl.innerText = `Tempo: ${timeLeft}s`;
+            fillEl.style.width = `${(timeLeft / 30) * 100}%`;
+
+            if (timeLeft <= 0) {
+                clearInterval(tacticalTimerInterval);
+                checkTacticalChoice(-1);
+            }
+        }, 1000);
+    }
+
+    function checkTacticalChoice(selectedIdx) {
+        clearInterval(tacticalTimerInterval);
+        const item = tacticalScenarios[currentTacticalIdx];
+        const fb = document.getElementById('tactical-feedback-box');
+        fb.classList.remove('hidden');
+
+        if (selectedIdx === item.answer) {
+            fb.style.background = "#f0fdf4";
+            fb.style.color = "#166534";
+            fb.style.border = "2px solid #bbf7d0";
+            fb.innerHTML = `<strong>⚡ Decisão Operacional Excelente! (+50 XP)</strong><br>${item.feedback}`;
+            addXP(50);
+            playBeep('correct');
+        } else {
+            fb.style.background = "#fef2f2";
+            fb.style.color = "#991b1b";
+            fb.style.border = "2px solid #fecaca";
+            fb.innerHTML = `<strong>⚠️ Atenção Operacional:</strong><br>${item.feedback}`;
+            playBeep('wrong');
+        }
+    }
+
+    /* CARTA INSPIRADORA (BOTÃO 05) */
+    function openInspirationLetter() {
+        hideAllScreens();
+        document.getElementById('screen-inspiration').classList.remove('hidden');
+        playBeep('pop');
+    }
+
+    /* INICIALIZAÇÃO E RESTAURAÇÃO DE SESSÃO */
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedCPF = localStorage.getItem('gcm_cpf');
+        if (savedCPF) {
+            const input = document.getElementById('input-cpf');
+            if (input) {
+                input.value = savedCPF;
+                mascaraCPF(input);
+            }
+        }
+        const savedXP = parseInt(localStorage.getItem('gcm_xp') || '0', 10);
+        if (savedXP > 0) addXP(savedXP);
+        renderFlashcard();
+    });
+</script>
+</body>
+</html>
