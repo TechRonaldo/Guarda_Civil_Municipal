@@ -29,6 +29,7 @@ Utilize esta ferramenta como um forte aliado para treinar seus conhecimentos e c
 ---
 
 ## 💙 Apoio ao Projeto (R$ 4,89)
+Pix.: 19988738114
 
 Sua contribuição de **R$ 4,89** é fundamental para:
 1. Custear a hospedagem e manter a plataforma online.
